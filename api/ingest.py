@@ -23,6 +23,8 @@ from dotenv import load_dotenv
 from groq import APIError, Groq, RateLimitError
 from pydantic import BaseModel, Field
 
+from .llm import groq_model
+
 from . import db
 
 load_dotenv(Path(__file__).parent.parent / ".env")
@@ -123,7 +125,7 @@ def extract(text: str) -> list[ExtractedNode]:
     client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
     try:
         resp = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=groq_model(),
             response_format={"type": "json_object"},
             max_tokens=2048,
             messages=[

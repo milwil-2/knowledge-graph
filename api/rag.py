@@ -28,6 +28,7 @@ from pydantic import BaseModel
 from vector.store import semantic_search
 
 from . import db
+from .llm import groq_model
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
@@ -343,7 +344,7 @@ def _cypher_mode_answer(question: str) -> dict:
     # --- 1. Plan: ask the LLM for a Cypher query --------------------------
     try:
         plan_response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=groq_model(),
             response_format={"type": "json_object"},
             max_tokens=512,
             messages=[
@@ -394,7 +395,7 @@ def _cypher_mode_answer(question: str) -> dict:
     )
     try:
         summary_response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=groq_model(),
             response_format={"type": "json_object"},
             max_tokens=1024,
             messages=[
@@ -451,7 +452,7 @@ def answer_question(question: str, mode: str = "auto") -> dict:
     try:
         client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=groq_model(),
             response_format={"type": "json_object"},
             max_tokens=2048,
             messages=[
