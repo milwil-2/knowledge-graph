@@ -55,6 +55,15 @@
       flex: 1;
       background: var(--bg);
     }
+    .graph-error {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      background: var(--bg); padding: 32px; text-align: center;
+    }
+    .graph-error .title { color: var(--text); font-size: 15px; font-weight: 600; }
+    .graph-error .detail {
+      color: var(--muted); font-size: 12.5px; margin-top: 8px;
+      max-width: 460px; line-height: 1.5;
+    }
     .sidebar {
       width: 380px;
       border-left: 1px solid var(--border);
@@ -317,15 +326,38 @@ ORDER BY v.trust_score DESC LIMIT 10;</pre>
     async function loadHealth() {
       try {
         const h = await (await fetch('/health')).json();
+        if (h.status !== 'ok') throw new Error(h.status);
         document.getElementById('counts').innerHTML =
           `<b>${h.nodes}</b> nodes &middot; <b>${h.relationships}</b> relationships`;
       } catch (e) {
-        document.getElementById('counts').textContent = 'health unavailable';
+        document.getElementById('counts').textContent = 'database unavailable';
       }
     }
 
+    function showGraphError(detail) {
+      const container = document.getElementById('network');
+      container.className = 'graph-error';
+      container.replaceChildren();
+      const title = document.createElement('div');
+      title.className = 'title';
+      title.textContent = 'Could not load the graph';
+      const msg = document.createElement('div');
+      msg.className = 'detail';
+      msg.textContent = detail;
+      container.append(title, msg);
+    }
+
     async function loadGraph() {
-      const g = await (await fetch('/graph')).json();
+      let g;
+      try {
+        const res = await fetch('/graph');
+        if (!res.ok) throw new Error('the API returned HTTP ' + res.status);
+        g = await res.json();
+      } catch (e) {
+        showGraphError('The graph API is unreachable (' + e.message +
+          '). This usually means the Neo4j database is down or unreachable.');
+        return;
+      }
       const nodes = g.nodes.map(n => ({
         id: n.id,
         label: n.label,

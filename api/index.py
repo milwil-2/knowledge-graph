@@ -64,7 +64,12 @@ class IngestRequest(BaseModel):
 
 @app.get("/health")
 def health():
-    return db.health()
+    result = db.health()
+    # Still a JSON body describing the problem, but a status code that load
+    # balancers and uptime checks can act on.
+    if result.get("status") != "ok":
+        return JSONResponse(status_code=503, content=result)
+    return result
 
 
 @app.get("/nodes/{node_id}")

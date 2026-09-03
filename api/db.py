@@ -35,10 +35,19 @@ def get_driver():
 
 
 def health() -> dict:
-    """Return basic graph stats: status plus node and relationship counts."""
-    with get_driver().session() as s:
-        nodes = s.run("MATCH (n) RETURN count(n) AS c").single()["c"]
-        rels = s.run("MATCH ()-[r]->() RETURN count(r) AS c").single()["c"]
+    """Return basic graph stats: status plus node and relationship counts.
+
+    Reporting on the database is this endpoint's whole job, so an unreachable
+    database is a result to report, not an exception to raise — otherwise the
+    one route that could explain an outage fails the same opaque way as every
+    other route.
+    """
+    try:
+        with get_driver().session() as s:
+            nodes = s.run("MATCH (n) RETURN count(n) AS c").single()["c"]
+            rels = s.run("MATCH ()-[r]->() RETURN count(r) AS c").single()["c"]
+    except Exception as exc:
+        return {"status": "database_unavailable", "error": f"{type(exc).__name__}: {exc}"}
     return {"status": "ok", "nodes": nodes, "relationships": rels}
 
 
